@@ -11,7 +11,7 @@
 
 ## 🎯 Project Overview
 
-This system enables automated visual inspection of pipeline infrastructure using drone-mounted cameras with GPS integration. Developed as part of a thesis project at [Your University], it addresses critical challenges in pipeline maintenance for Indonesia's oil, gas, and maritime industries.
+This system enables automated visual inspection of pipeline infrastructure using drone-mounted cameras with GPS integration. Developed as part of a thesis project at Institut Teknologi Sepuluh Nopember, it addresses critical challenges in pipeline maintenance for Indonesia's oil, gas, and maritime industries.
 
 Abstract
 Pipeline infrastructures are essential for supporting Indonesia’s oil, gas, and maritime
@@ -237,7 +237,7 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file.
 ## 📞 Contact
 
 **Kris**  
-📧 [Your Email]  
+📧 gerald.pranaja@gmail.com  
 🔗 [LinkedIn](your-linkedin)  
 🎓 [University Profile](your-profile)
 
