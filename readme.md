@@ -13,6 +13,32 @@
 
 This system enables automated visual inspection of pipeline infrastructure using drone-mounted cameras with GPS integration. Developed as part of a thesis project at [Your University], it addresses critical challenges in pipeline maintenance for Indonesia's oil, gas, and maritime industries.
 
+Abstract
+Pipeline infrastructures are essential for supporting Indonesia’s oil, gas, and maritime
+industries, yet their reliability is continually threatened by corrosion and third-party damage
+(TPD). Manual inspection methods currently the dominant practice are time-consuming,
+hazardous, and prone to human error, resulting in early-stage defects often being overlooked.
+These limitations highlight the need for a more efficient, objective, and technologically
+advanced inspection system. This research proposes the implementation of a drone-assisted
+visual inspection framework integrating YOLOv12n lightweight object detection, TensorFlow,
+and GPS-based localization to identify corrosion and TPD on surface pipelines in real time.
+The study focuses on detecting visible surface anomalies for mechanical impacts or
+Third Parties Damages that commonly occur in industrial and maritime environments. A dataset
+consisting of field-acquired images and publicly available corrosion imagery is prepared
+through preprocessing and augmentation before being annotated for YOLO training. The
+YOLOv12n model is then trained and evaluated using performance metrics including precision,
+recall, F1-score, mAP, and inference time. GPS coordinates are integrated to geotag detected
+defects, enabling spatial mapping for maintenance planning.
+The expected results of this research include achieving an accurate and computationally
+efficient detection model suitable for deployment on drone platforms, improving inspection
+coverage while reducing reliance on manual methods. The system aims to provide real-time,
+location-aware defect identification, supporting predictive maintenance and enhancing the
+safety and sustainability of Indonesia’s pipeline operations. This study contributes to the digital
+transformation of industrial inspection practices and aligns with national efforts toward
+infrastructure innovation and environmental protection.
+Keywords: Computer Vision, Pipeline Inspection, YOLOv11n, Third-Party Damage,
+Corrosion, GPS Localization.
+
 ### Key Features
 
 - ✅ **YOLOv11n Object Detection** - Lightweight model optimized for real-time inference
@@ -235,32 +261,3 @@ If this project helps your research, please consider giving it a star!
 ---
 
 **Last Updated:** April 2026
-
-
-abstract
-
-Abstract
-Pipeline infrastructures are essential for supporting Indonesia’s oil, gas, and maritime
-industries, yet their reliability is continually threatened by corrosion and third-party damage
-(TPD). Manual inspection methods currently the dominant practice are time-consuming,
-hazardous, and prone to human error, resulting in early-stage defects often being overlooked.
-These limitations highlight the need for a more efficient, objective, and technologically
-advanced inspection system. This research proposes the implementation of a drone-assisted
-visual inspection framework integrating YOLOv12n lightweight object detection, TensorFlow,
-and GPS-based localization to identify corrosion and TPD on surface pipelines in real time.
-The study focuses on detecting visible surface anomalies for mechanical impacts or
-Third Parties Damages that commonly occur in industrial and maritime environments. A dataset
-consisting of field-acquired images and publicly available corrosion imagery is prepared
-through preprocessing and augmentation before being annotated for YOLO training. The
-YOLOv12n model is then trained and evaluated using performance metrics including precision,
-recall, F1-score, mAP, and inference time. GPS coordinates are integrated to geotag detected
-defects, enabling spatial mapping for maintenance planning.
-The expected results of this research include achieving an accurate and computationally
-efficient detection model suitable for deployment on drone platforms, improving inspection
-coverage while reducing reliance on manual methods. The system aims to provide real-time,
-location-aware defect identification, supporting predictive maintenance and enhancing the
-safety and sustainability of Indonesia’s pipeline operations. This study contributes to the digital
-transformation of industrial inspection practices and aligns with national efforts toward
-infrastructure innovation and environmental protection.
-Keywords: Computer Vision, Pipeline Inspection, YOLOv11n, Third-Party Damage,
-Corrosion, GPS Localization.
