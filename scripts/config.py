@@ -1,97 +1,63 @@
 # ============================================================================
-# CONFIGURATION FILE FOR WEBCAM TESTING
-# Edit these settings instead of modifying the main script
+# CONFIGURATION FILE FOR PIPELINE INSPECTION SYSTEM
 # ============================================================================
 
 """
-Simple configuration - just change the values below!
+Configuration for Drone Pipeline Visual Inspection System
+Edit these settings - no need to modify main scripts
 """
 
 # ============================================================================
 # MODEL SETTINGS
 # ============================================================================
 
-# Path to your trained YOLO model
-# After training in Colab, download best.pt and place it in models/ folder
-MODEL_PATH = 'models/best.pt'
-
-# Detection confidence threshold (0.0 to 1.0)
-# Lower = more detections (may include false positives)
-# Higher = fewer detections (more accurate but might miss some)
-CONFIDENCE_THRESHOLD = 0.25
+MODEL_PATH = 'models/best.pt'  # Path to trained YOLOv11n model
+CONFIDENCE_THRESHOLD = 0.25     # Detection confidence (0.0-1.0)
 
 # ============================================================================
 # WEBCAM SETTINGS
 # ============================================================================
 
-# Camera index (usually 0 for built-in webcam)
-# If webcam doesn't open, try: 0, 1, 2, etc.
-CAMERA_INDEX = 0
-
-# Webcam resolution
-# Lower resolution = faster FPS, Higher resolution = better quality
-WEBCAM_WIDTH = 1280
-WEBCAM_HEIGHT = 720
+CAMERA_INDEX = 0           # Camera device (0=default, 1=external)
+WEBCAM_WIDTH = 1280        # Resolution width
+WEBCAM_HEIGHT = 720        # Resolution height
 
 # ============================================================================
-# GPS SIMULATION SETTINGS
+# GPS SIMULATION (for laptop testing)
 # ============================================================================
 
-# Starting GPS coordinates (default: Surabaya, Indonesia)
-GPS_START_LATITUDE = -7.2575
+GPS_START_LATITUDE = -7.2575   # Surabaya, Indonesia
 GPS_START_LONGITUDE = 112.7521
-
-# Simulated flight distance in kilometers
-FLIGHT_DISTANCE_KM = 0.5
-
-# Number of GPS points to generate
-GPS_POINTS_COUNT = 1000
+FLIGHT_DISTANCE_KM = 0.5       # Simulated flight distance
+GPS_POINTS_COUNT = 1000        # Number of GPS waypoints
 
 # ============================================================================
-# SAVING SETTINGS
+# OUTPUT SETTINGS
 # ============================================================================
 
-# Directory to save results
 OUTPUT_DIRECTORY = 'results'
-
-# Auto-save interval (save results every N detections)
-# Set to 0 to disable auto-save
-AUTO_SAVE_INTERVAL = 10
+AUTO_SAVE_INTERVAL = 10        # Save every N detections (0=disable)
 
 # ============================================================================
 # DISPLAY SETTINGS
 # ============================================================================
 
-# Show FPS in overlay
 SHOW_FPS = True
-
-# Show GPS coordinates in overlay
 SHOW_GPS = True
-
-# Show detection count in overlay
 SHOW_DETECTION_COUNT = True
 
 # ============================================================================
-# ADVANCED SETTINGS (usually don't need to change)
+# PERFORMANCE SETTINGS
 # ============================================================================
 
-# Maximum FPS (0 = unlimited)
-MAX_FPS = 0
-
-# Enable verbose logging
-VERBOSE = True
-
-# Save individual frames with detections
-SAVE_FRAMES = False
-
-# Frame save directory (if SAVE_FRAMES is True)
-FRAME_SAVE_DIR = 'results/frames'
+FRAME_SKIP = 1                 # Process every Nth frame (1=all frames)
+USE_GPU = False                # Set True if NVIDIA GPU available
+MAX_FPS = 0                    # FPS limit (0=unlimited)
 
 # ============================================================================
 # EXPORT FORMATS
 # ============================================================================
 
-# Which formats to export (True/False for each)
 EXPORT_JSON = True
 EXPORT_CSV = True
 EXPORT_KML = True
@@ -99,45 +65,46 @@ EXPORT_GEOJSON = True
 EXPORT_HTML_MAP = True
 
 # ============================================================================
-# PERFORMANCE OPTIMIZATION
+# ADVANCED SETTINGS
 # ============================================================================
 
-# Skip frames for faster processing (1 = process every frame, 2 = every other frame)
-FRAME_SKIP = 1
-
-# Use GPU if available (requires CUDA-enabled PyTorch)
-USE_GPU = False  # Set to True if you have NVIDIA GPU on laptop
+VERBOSE = False                # Print detailed logs
+SAVE_FRAMES = False           # Save detection images
+FRAME_SAVE_DIR = 'results/frames'
 
 # ============================================================================
-# USAGE INSTRUCTIONS
+# CONFIGURATION VALIDATION
 # ============================================================================
 
-"""
-HOW TO USE THIS CONFIG:
+def validate_config():
+    """Validate configuration values"""
+    errors = []
+    
+    if not (0.0 <= CONFIDENCE_THRESHOLD <= 1.0):
+        errors.append("CONFIDENCE_THRESHOLD must be between 0.0 and 1.0")
+    if FRAME_SKIP < 1:
+        errors.append("FRAME_SKIP must be >= 1")
+    if AUTO_SAVE_INTERVAL < 0:
+        errors.append("AUTO_SAVE_INTERVAL must be >= 0")
+    if not (1.0 <= CLAHE_CLIP_LIMIT <= 8.0):
+        errors.append("CLAHE_CLIP_LIMIT should be between 1.0 and 8.0")
+    if not (1.0 <= SATURATION_SCALE <= 2.5):
+        errors.append("SATURATION_SCALE should be between 1.0 and 2.5")
 
-1. Basic setup (most common):
-   - Set MODEL_PATH to your trained model location
-   - Adjust CONFIDENCE_THRESHOLD (start with 0.25)
-   - Try different CAMERA_INDEX if webcam doesn't open
+    if errors:
+        raise ValueError("Configuration errors:\n" + "\n".join(f"  - {e}" for e in errors))
 
-2. Performance issues (slow FPS):
-   - Lower WEBCAM_WIDTH and WEBCAM_HEIGHT (try 640x480)
-   - Increase FRAME_SKIP to 2 or 3
-   - Increase CONFIDENCE_THRESHOLD to 0.5
+# ============================================================================
+# CAMERA COLOR & IMAGE ENHANCEMENT SETTINGS
+# ============================================================================
 
-3. Too few detections:
-   - Lower CONFIDENCE_THRESHOLD to 0.15 or 0.20
-   - Make sure you're showing rusty/corroded objects to camera
+# Force color mode — fixes B&W feed on some cameras/drivers
+FORCE_COLOR = True             # Always convert frame to BGR color
 
-4. GPS location:
-   - Change GPS_START_LATITUDE and GPS_START_LONGITUDE to your area
-   - Adjust FLIGHT_DISTANCE_KM for wider/narrower coverage
-
-5. Saving:
-   - Change OUTPUT_DIRECTORY for different save location
-   - Adjust AUTO_SAVE_INTERVAL (higher = save less often)
-   - Enable SAVE_FRAMES to save images with detections
-
-Then run:
-    python webcam_test_with_config.py
-"""
+# Corrosion-optimized image enhancement
+ENHANCE_IMAGE = True           # Enable preprocessing before YOLO inference
+CLAHE_CLIP_LIMIT = 2.5        # Contrast boost (1.0=none, 3.0=strong). 2.5 is best for rust
+CLAHE_TILE_SIZE = 8           # CLAHE tile grid size (8x8 is standard)
+SATURATION_SCALE = 1.4        # Boost color saturation (1.0=none, 1.4 boosts reds/oranges)
+BRIGHTNESS_ALPHA = 1.05       # Slight brightness lift (1.0=none, keeps shadows visible)
+BRIGHTNESS_BETA = 5           # Additive brightness offset (0=none)

@@ -1,426 +1,266 @@
-# 📦 GitHub Repository Setup Guide
+# 🚁 Drone Pipeline Visual Inspection System
 
-## 🎯 How to Organize Your Repo
+[![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/)
+[![YOLOv11](https://img.shields.io/badge/YOLO-v11n-green.svg)](https://github.com/ultralytics/ultralytics)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Status](https://img.shields.io/badge/Status-Active-success.svg)]()
 
-Based on your current structure, here's the complete organization:
+**Real-time corrosion and third-party damage detection for pipeline infrastructure using YOLOv11n + GPS localization**
 
 ---
 
-## 📁 Final Repository Structure
+## 🎯 Project Overview
+
+This system enables automated visual inspection of pipeline infrastructure using drone-mounted cameras with GPS integration. Developed as part of a thesis project at [Your University], it addresses critical challenges in pipeline maintenance for Indonesia's oil, gas, and maritime industries.
+
+### Key Features
+
+- ✅ **YOLOv11n Object Detection** - Lightweight model optimized for real-time inference
+- ✅ **GPS Localization** - Automatic geotagging of detected defects
+- ✅ **Multiple Export Formats** - JSON, CSV, KML, GeoJSON, HTML maps
+- ✅ **Dual Deployment** - Laptop testing + Raspberry Pi production
+- ✅ **Interactive Visualization** - Web maps with severity-based clustering
+- ✅ **Maintenance Prioritization** - Automated severity classification
+
+---
+
+## 🏗️ System Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    TRAINING PHASE                        │
+│  Google Colab (T4 GPU) → YOLOv11n → best.pt            │
+└─────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────┐
+│                   TESTING PHASE                          │
+│  Windows Laptop → Webcam + Simulated GPS                │
+└─────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────┐
+│                  DEPLOYMENT PHASE                        │
+│  Raspberry Pi → Camera + Real GPS → Pipeline Inspection │
+└─────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🚀 Quick Start
+
+### 1. Installation
+
+```bash
+# Clone repository
+git clone https://github.com/gegeisgege/YOLO-RustDetectorDrone1.git
+cd YOLO-RustDetectorDrone1
+
+# Create virtual environment
+python -m venv .venv
+source .venv/bin/activate  # Linux/Mac
+.venv\Scripts\activate     # Windows
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+### 2. Training (Google Colab)
+
+```python
+# Upload train_colab.py to Google Colab
+# Set Runtime → T4 GPU
+# Run all cells
+# Download best.pt when complete
+```
+
+### 3. Testing (Laptop)
+
+```bash
+# Place best.pt in models/ folder
+python scripts/webcam_test_with_config.py
+
+# Controls:
+# [Q] Quit  [S] Save  [P] Stats  [SPACE] Pause
+```
+
+### 4. Results
+
+Check `results/` folder for:
+- 📄 `final_detections.json` - Complete detection data
+- 📊 `final_detections.csv` - Spreadsheet format
+- 🗺️ `final_detections.kml` - Google Earth file
+- 🌐 `final_map.html` - Interactive web map
+
+---
+
+## 📁 Project Structure
 
 ```
 YOLO-RustDetectorDrone1/
-│
-├── .github/                          # GitHub configuration (optional)
-│   └── workflows/
-│       └── ci.yml                    # Automated testing
-│
-├── .venv/                            # Virtual environment (gitignored)
-├── .venv-1/                          # Alternative venv (gitignored)
-│
-├── docs/                             # Documentation (create this)
-│   ├── screenshots/                  # Screenshots for README
-│   │   ├── detection_demo.png
-│   │   ├── interactive_map.png
-│   │   └── google_earth.png
-│   ├── TRAINING.md                   # Training guide
-│   ├── RASPBERRY_PI_SETUP.md         # RPi deployment guide
-│   └── API.md                        # API documentation
-│
-├── models/                           # Trained models
-│   ├── best.pt                       # Your trained model ⭐
-│   ├── best.onnx                     # ONNX export (optional)
-│   └── best.tflite                   # TFLite export (optional)
-│
-├── results/                          # Test results (gitignored)
-│   ├── final_detection_*.json
-│   ├── final_detection_*.csv
-│   ├── final_detection_*.kml
-│   └── final_detection_map.html
-│
-├── scripts/                          # All Python scripts
-│   ├── __pycache__/                  # (gitignored)
-│   ├── config.py                     # Configuration ⭐
-│   ├── gps_integration_enhanced.py   # GPS module ⭐
-│   ├── webcam_test.py               # Simple testing ⭐
-│   ├── webcam_test_with_config.py   # Advanced testing ⭐
-│   ├── web.py                        # Web interface
-│   └── webconfig.py                 # Web config
-│
-├── tests/                            # Unit tests (create this - optional)
-│   ├── __init__.py
-│   ├── test_gps.py
-│   └── test_detection.py
-│
-├── .gitignore                        # Git ignore rules ⭐
-├── CONTRIBUTING.md                   # Contribution guidelines ⭐
-├── LICENSE                           # License file (create this)
-├── QUICKSTART.md                     # Quick start guide ⭐
-├── README.md                         # Main documentation ⭐
-└── requirements.txt                  # Dependencies ⭐
-
-⭐ = Essential files (must have)
+├── docs/                    # Documentation
+│   └── screenshots/         # Demo images
+├── models/                  # Trained models
+│   └── best.pt             # YOLOv11n weights
+├── results/                 # Output files (gitignored)
+├── scripts/                 # Source code
+│   ├── config.py           # Configuration
+│   ├── gps_integration_enhanced.py  # GPS module
+│   └── webcam_test_with_config.py  # Main script
+│   └── webcam.py
+├── train_colab.py          # Colab training script
+├── requirements.txt        # Dependencies
+└── README.md              # This file
 ```
 
 ---
 
-## 🚀 Step-by-Step Setup
+## ⚙️ Configuration
 
-### 1. **Clone Your Existing Repo**
+Edit `scripts/config.py` to customize:
 
-```bash
-git clone https://github.com/gegeisgege/YOLO-RustDetectorDrone1.git
-cd YOLO-RustDetectorDrone1
+```python
+# Model settings
+MODEL_PATH = 'models/best.pt'
+CONFIDENCE_THRESHOLD = 0.25
+
+# Webcam settings
+CAMERA_INDEX = 0
+WEBCAM_WIDTH = 1280
+WEBCAM_HEIGHT = 720
+
+# GPS simulation
+GPS_START_LATITUDE = -7.2575   # Surabaya
+GPS_START_LONGITUDE = 112.7521
 ```
 
 ---
 
-### 2. **Add New Files from This Session**
+## 📊 Performance Metrics
 
-Copy these files I created to your repo:
-
-**Root directory:**
-```bash
-# Copy to root
-README.md              ← Replace your existing readme.md
-.gitignore            ← Replace your existing .gitignore
-QUICKSTART.md         ← New file
-CONTRIBUTING.md       ← New file
-requirements.txt      ← Update if different
-```
-
-**Scripts directory:**
-```bash
-# Copy to scripts/
-config.py                      ← New file
-gps_integration_enhanced.py    ← New file
-webcam_test.py                ← New file (or replace web.py)
-webcam_test_with_config.py    ← New file
-```
+| Metric | Value |
+|--------|-------|
+| Model Size | ~6MB |
+| Inference Speed | 50-100 FPS (GPU) / 15-30 FPS (CPU) |
+| mAP50 | 0.XX (update after training) |
+| Precision | 0.XX |
+| Recall | 0.XX |
 
 ---
 
-### 3. **Create docs/ Directory**
+## 🎓 Academic Context
 
-```bash
-mkdir docs
-mkdir docs/screenshots
+**Thesis:** Drone-Assisted Pipeline Inspection Using Computer Vision  
+**Institution:** ITS, Surabaya
+**Author:** Kris  
+**Year:** 2024-2025  
 
-# Add documentation files
-# (Create these based on your thesis work)
-```
-
----
-
-### 4. **Optional: Add GitHub Actions**
-
-```bash
-mkdir -p .github/workflows
-# Copy github_actions_ci.yml to .github/workflows/ci.yml
-```
+**Keywords:** Computer Vision, YOLOv11, Pipeline Inspection, Corrosion Detection, GPS Localization, Drone Automation
 
 ---
 
-### 5. **Update .gitignore**
-
-Your current `.gitignore` should exclude:
-
-```
-# Virtual environments
-.venv/
-.venv-1/
-
-# Results (regenerated each run)
-results/final_*
-results/*.html
-results/*.json
-results/*.csv
-results/*.kml
-
-# Python cache
-__pycache__/
-*.pyc
-
-# Large models (use Git LFS or separate download)
-models/*.pt
-!models/best.pt  # Keep best model
-models/*.onnx
-models/*.tflite
-
-# Training runs
-runs/
-```
-
----
-
-### 6. **Commit and Push**
-
-```bash
-# Stage all changes
-git add .
-
-# Commit with descriptive message
-git commit -m "docs: Add comprehensive README and documentation
-
-- Add detailed README.md with features and usage
-- Add QUICKSTART.md for quick setup
-- Add CONTRIBUTING.md for contributors
-- Update .gitignore for cleaner repo
-- Add GPS integration modules
-- Add webcam testing scripts with config support"
-
-# Push to GitHub
-git push origin main
-```
-
----
-
-## 📝 What to Update on GitHub Website
-
-### 1. **Repository Description**
-
-Go to your repo → Settings → Description:
-```
-🚁 Drone-based pipeline inspection using YOLOv11n + GPS localization for rust & corrosion detection
-```
-
-### 2. **Topics/Tags**
-
-Add these tags:
-```
-yolo
-yolov11
-object-detection
-computer-vision
-gps
-drone
-pipeline-inspection
-corrosion-detection
-raspberry-pi
-thesis
-deep-learning
-python
-opencv
-```
-
-### 3. **About Section**
-
-- ✅ Website: (your university website or project page)
-- ✅ Topics: (add the tags above)
-- ✅ Include in the home page: ✓
-
-### 4. **README Preview**
-
-Your README.md should show:
-- ✅ Badges (Python, YOLO, License, Status)
-- ✅ Project overview
-- ✅ Features list
-- ✅ Quick start instructions
-- ✅ Screenshots (add these later)
-- ✅ Performance metrics
-
----
-
-## 🖼️ Adding Screenshots
-
-### Where to Add Screenshots
-
-```
-docs/screenshots/
-├── detection_demo.png       # Webcam testing in action
-├── interactive_map.png      # HTML map screenshot
-└── google_earth.png        # KML in Google Earth
-```
-
-### How to Take Screenshots
-
-1. **Detection Demo:**
-   - Run `python webcam_test.py`
-   - Show rusty object to camera
-   - Take screenshot when detections appear
-   - Save as `detection_demo.png`
-
-2. **Interactive Map:**
-   - After testing, open `results/final_detection_map.html`
-   - Take full-page screenshot
-   - Save as `interactive_map.png`
-
-3. **Google Earth:**
-   - Open `results/final_detections.kml` in Google Earth
-   - Zoom to show markers
-   - Take screenshot
-   - Save as `google_earth.png`
-
-### Update README.md
-
-```markdown
 ## 📸 Screenshots
 
-### Detection in Action
+### Detection Demo
 ![Webcam Testing](docs/screenshots/detection_demo.png)
 
 ### Interactive Map
 ![GPS Map](docs/screenshots/interactive_map.png)
 
-### Google Earth Visualization
-![KML Visualization](docs/screenshots/google_earth.png)
+### Google Earth
+![KML](docs/screenshots/google_earth.png)
+
+---
+
+## 🔧 Troubleshooting
+
+### Webcam not opening
+```python
+# Try different camera indices in config.py
+CAMERA_INDEX = 0  # Try 0, 1, 2...
+```
+
+### Low FPS
+```python
+# Reduce resolution
+WEBCAM_WIDTH = 640
+WEBCAM_HEIGHT = 480
+
+# Skip frames
+FRAME_SKIP = 2
+```
+
+### No detections
+```python
+# Lower confidence threshold
+CONFIDENCE_THRESHOLD = 0.15
 ```
 
 ---
 
-## 🎯 Priority Tasks
+## 🤝 Contributing
 
-### **High Priority** (Do First)
-
-1. ✅ Replace `readme.md` with comprehensive `README.md`
-2. ✅ Update `.gitignore` to keep repo clean
-3. ✅ Add all scripts (`config.py`, `webcam_test.py`, etc.)
-4. ✅ Commit and push changes
-5. ⏳ Test that everything still works
-
-### **Medium Priority** (Do Soon)
-
-1. ⏳ Add screenshots to `docs/screenshots/`
-2. ⏳ Update README with screenshot links
-3. ⏳ Add `QUICKSTART.md`
-4. ⏳ Create `LICENSE` file (MIT recommended)
-
-### **Low Priority** (Optional)
-
-1. 📋 Add GitHub Actions CI/CD
-2. 📋 Create unit tests
-3. 📋 Add detailed API documentation
-4. 📋 Create wiki pages
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ---
 
-## 📋 Recommended Commit Messages
+## 📄 License
 
-Use these formats:
-
-```bash
-# New features
-git commit -m "feat: Add GPS integration module"
-git commit -m "feat: Add webcam testing with config support"
-
-# Documentation
-git commit -m "docs: Update README with comprehensive guide"
-git commit -m "docs: Add quick start guide"
-
-# Bug fixes
-git commit -m "fix: Resolve webcam initialization error"
-git commit -m "fix: GPS coordinate precision issue"
-
-# Refactoring
-git commit -m "refactor: Reorganize script structure"
-git commit -m "refactor: Improve config file organization"
-
-# Testing
-git commit -m "test: Add GPS module unit tests"
-git commit -m "test: Add webcam integration tests"
-```
+This project is licensed under the MIT License - see [LICENSE](LICENSE) file.
 
 ---
 
-## 🔍 Repository Checklist
+## 📞 Contact
 
-Before sharing your repo:
-
-### Essential Files
-- [x] README.md (comprehensive, with badges)
-- [x] .gitignore (clean, excludes unnecessary files)
-- [x] requirements.txt (all dependencies listed)
-- [x] LICENSE (MIT, GPL, or proprietary)
-- [ ] QUICKSTART.md (optional but helpful)
-
-### Code Quality
-- [x] Scripts organized in `scripts/` folder
-- [x] Configuration separated in `config.py`
-- [ ] Comments in complex code sections
-- [ ] Docstrings for major functions
-- [ ] No hardcoded credentials or secrets
-
-### Documentation
-- [ ] Screenshots in README
-- [ ] Usage examples provided
-- [ ] Installation instructions clear
-- [ ] Troubleshooting section included
-
-### Professional Touches
-- [ ] Badges in README (Python, YOLO, License)
-- [ ] Repository description set
-- [ ] Topics/tags added
-- [ ] Contributing guidelines (CONTRIBUTING.md)
-- [ ] GitHub Actions (optional)
+**Kris**  
+📧 [Your Email]  
+🔗 [LinkedIn](your-linkedin)  
+🎓 [University Profile](your-profile)
 
 ---
 
-## 🎓 For Your Thesis
+## 🙏 Acknowledgments
 
-Your GitHub repo serves as:
-
-1. **Portfolio piece** - Shows coding skills
-2. **Documentation** - Methodology and implementation
-3. **Reproducibility** - Others can replicate results
-4. **Evidence** - Proof of work done
-
-**Make sure to:**
-- ✅ Keep README professional and clear
-- ✅ Add screenshots and visualizations
-- ✅ Document all steps thoroughly
-- ✅ Include performance metrics
-- ✅ Cite dependencies properly
+- Ultralytics for YOLOv11
+- Roboflow for dataset management
+- Google Colab for free GPU access
+- [Your Advisors/Supervisors]
 
 ---
 
-## 📞 Need Help?
+## ⭐ Star History
 
-**Git commands cheatsheet:**
+If this project helps your research, please consider giving it a star!
 
-```bash
-# Check status
-git status
-
-# Stage files
-git add .                    # All files
-git add README.md           # Specific file
-git add scripts/*.py        # All Python files in scripts/
-
-# Commit
-git commit -m "Your message"
-
-# Push
-git push origin main
-
-# Pull latest
-git pull origin main
-
-# Create branch
-git checkout -b feature-name
-
-# Switch branch
-git checkout main
-```
+[![Star History](https://api.star-history.com/svg?repos=gegeisgege/YOLO-RustDetectorDrone1&type=Date)](https://star-history.com/#gegeisgege/YOLO-RustDetectorDrone1&Date)
 
 ---
 
-## ✅ Final Checklist
+**Last Updated:** April 2026
 
-Ready to push your updated repo:
 
-- [x] All files from this session copied to repo
-- [x] README.md looks good in preview
-- [x] .gitignore excludes correct files
-- [x] requirements.txt is up to date
-- [ ] Screenshots added (do after testing)
-- [ ] LICENSE file added
-- [x] Everything tested locally
-- [ ] Committed and pushed to GitHub
-- [ ] Repository description updated
-- [ ] Topics/tags added
+abstract
 
----
-
-**Your repo will look professional and thesis-ready! 🎉**
-
-**Repository:** https://github.com/gegeisgege/YOLO-RustDetectorDrone1
+Abstract
+Pipeline infrastructures are essential for supporting Indonesia’s oil, gas, and maritime
+industries, yet their reliability is continually threatened by corrosion and third-party damage
+(TPD). Manual inspection methods currently the dominant practice are time-consuming,
+hazardous, and prone to human error, resulting in early-stage defects often being overlooked.
+These limitations highlight the need for a more efficient, objective, and technologically
+advanced inspection system. This research proposes the implementation of a drone-assisted
+visual inspection framework integrating YOLOv12n lightweight object detection, TensorFlow,
+and GPS-based localization to identify corrosion and TPD on surface pipelines in real time.
+The study focuses on detecting visible surface anomalies for mechanical impacts or
+Third Parties Damages that commonly occur in industrial and maritime environments. A dataset
+consisting of field-acquired images and publicly available corrosion imagery is prepared
+through preprocessing and augmentation before being annotated for YOLO training. The
+YOLOv12n model is then trained and evaluated using performance metrics including precision,
+recall, F1-score, mAP, and inference time. GPS coordinates are integrated to geotag detected
+defects, enabling spatial mapping for maintenance planning.
+The expected results of this research include achieving an accurate and computationally
+efficient detection model suitable for deployment on drone platforms, improving inspection
+coverage while reducing reliance on manual methods. The system aims to provide real-time,
+location-aware defect identification, supporting predictive maintenance and enhancing the
+safety and sustainability of Indonesia’s pipeline operations. This study contributes to the digital
+transformation of industrial inspection practices and aligns with national efforts toward
+infrastructure innovation and environmental protection.
+Keywords: Computer Vision, Pipeline Inspection, YOLOv11n, Third-Party Damage,
+Corrosion, GPS Localization.

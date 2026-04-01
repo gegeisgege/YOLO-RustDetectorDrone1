@@ -1,75 +1,65 @@
 #!/usr/bin/env python3
 """
-WEBCAM TESTING SCRIPT - CONFIG FILE VERSION
-All settings can be changed in config.py without editing this file!
-
+OPTIMIZED WEBCAM TESTING SCRIPT
+Project: Drone Pipeline Visual Inspection with YOLOv11n
 Author: Kris
-Project: Drone Pipeline Visual Inspection with GPS
 """
 
 import cv2
 import numpy as np
-from ultralytics import YOLO
 import os
+import sys
+from datetime import datetime
 
-# Import configuration
+# Import YOLO
 try:
-    from scripts.config import *
-    print("✅ Configuration loaded from config.py")
+    from ultralytics import YOLO
 except ImportError:
-    print("⚠️ config.py not found! Using default settings.")
-    # Default settings if config.py is missing
-    MODEL_PATH = 'models/best.pt'
-    CONFIDENCE_THRESHOLD = 0.25
-    CAMERA_INDEX = 0
-    WEBCAM_WIDTH = 1280
-    WEBCAM_HEIGHT = 720
-    GPS_START_LATITUDE = -7.2575
-    GPS_START_LONGITUDE = 112.7521
-    FLIGHT_DISTANCE_KM = 0.5
-    GPS_POINTS_COUNT = 1000
-    OUTPUT_DIRECTORY = 'results'
-    AUTO_SAVE_INTERVAL = 10
-    SHOW_FPS = True
-    SHOW_GPS = True
-    SHOW_DETECTION_COUNT = True
-    FRAME_SKIP = 1
-    EXPORT_JSON = True
-    EXPORT_CSV = True
-    EXPORT_KML = True
-    EXPORT_GEOJSON = True
-    EXPORT_HTML_MAP = True
+    print("❌ ultralytics not installed. Run: pip install ultralytics")
+    sys.exit(1)
+
+# Import config
+try:
+    from config import *
+    print("✅ Configuration loaded")
+except ImportError:
+    print("❌ config.py not found in current directory!")
+    sys.exit(1)
 
 # Import GPS module
 try:
     from gps_integration_enhanced import GPSTaggedDetection, simulate_gps_for_webcam
-    print("✅ GPS integration module loaded")
+    print("✅ GPS module loaded")
 except ImportError:
-    print("⚠️ GPS module not found. Make sure gps_integration_enhanced.py is in the same folder!")
-    exit(1)
+    print("❌ gps_integration_enhanced.py not found!")
+    sys.exit(1)
 
 
-class WebcamPipelineInspector:
-    """Main class for webcam testing with config file support"""
-    
+class WebcamInspector:
+    """Optimized webcam pipeline inspector"""
+
     def __init__(self):
-        """Initialize using settings from config.py"""
-        print("🚀 Initializing Pipeline Inspector...")
+        """Initialize with config validation"""
+        print("🚀 Initializing Inspector...")
         print(f"   Model: {MODEL_PATH}")
         print(f"   Confidence: {CONFIDENCE_THRESHOLD}")
-        print(f"   Camera: {CAMERA_INDEX}")
-        
-        # Load YOLO model
+
+        # Check model exists
         if not os.path.exists(MODEL_PATH):
-            raise FileNotFoundError(f"Model not found at {MODEL_PATH}")
-        
+            raise FileNotFoundError(
+                f"\n❌ Model not found: {MODEL_PATH}\n"
+                f"Download best.pt from Colab and place in models/ folder"
+            )
+
+        # Load YOLO model
         self.model = YOLO(MODEL_PATH)
-        
-        # Initialize GPS handler
+
+        # Check if GPU available
+        self.device = 'cuda' if USE_GPU and self._check_gpu() else 'cpu'
+        print(f"   Device: {self.device.upper()}")
+
+        # Initialize GPS
         self.gps_handler = GPSTaggedDetection()
-        
-        # Simulate GPS flight path
-        print(f"🛰️ Generating {GPS_POINTS_COUNT} GPS points...")
         self.gps_points = simulate_gps_for_webcam(
             num_frames=GPS_POINTS_COUNT,
             start_lat=GPS_START_LATITUDE,
@@ -77,209 +67,240 @@ class WebcamPipelineInspector:
             flight_distance_km=FLIGHT_DISTANCE_KM
         )
         self.gps_index = 0
-        
-        # Statistics
+
+        # Stats
         self.frame_count = 0
         self.detection_count = 0
-        self.fps_list = []
-        
-        print("✅ Inspector initialized!\n")
-    
+        self.fps_history = []
+
+        print("✅ Initialization complete!\n")
+
+    def _check_gpu(self):
+        """Check CUDA availability"""
+        try:
+            import torch
+            return torch.cuda.is_available()
+        except:
+            return False
+
+    def _preprocess_frame(self, frame):
+        """
+        Fix B&W feed and enhance color for better corrosion detection.
+        Corrosion = orange/red/brown — these colors must be preserved and boosted.
+        """
+        # --- Fix 1: Force color ---
+        # If camera driver returned greyscale (2D array or 3-channel grey), convert it
+        if FORCE_COLOR:
+            if len(frame.shape) == 2:
+                # True greyscale array — expand to 3 channels
+                frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
+            elif frame.shape[2] == 3:
+                b, g, r = cv2.split(frame)
+                if np.array_equal(b, g) and np.array_equal(g, r):
+                    # Camera is sending grey packed as BGR.
+                    # Decode it as a proper greyscale image then re-encode as BGR.
+                    # This does NOT add color that isn't there — but it ensures
+                    # the pipeline treats it as color so CLAHE/saturation still run.
+                    grey = b  # all 3 channels identical, just take one
+                    frame = cv2.cvtColor(grey, cv2.COLOR_GRAY2BGR)
+
+        # --- Fix 2: CLAHE contrast enhancement on luminance only ---
+        # Work in LAB so we only boost luminance, not hue — keeps rust colors accurate
+        lab = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
+        l, a, b = cv2.split(lab)
+        clahe = cv2.createCLAHE(
+            clipLimit=CLAHE_CLIP_LIMIT,
+            tileGridSize=(CLAHE_TILE_SIZE, CLAHE_TILE_SIZE)
+        )
+        l = clahe.apply(l)
+        lab = cv2.merge([l, a, b])
+        frame = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
+
+        # --- Fix 3: Boost saturation to make rust orange/red stand out ---
+        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV).astype(np.float32)
+        hsv[:, :, 1] = np.clip(hsv[:, :, 1] * SATURATION_SCALE, 0, 255)
+        frame = cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2BGR)
+
+        # --- Fix 4: Mild brightness/contrast lift ---
+        frame = cv2.convertScaleAbs(frame, alpha=BRIGHTNESS_ALPHA, beta=BRIGHTNESS_BETA)
+
+        return frame
+
     def process_frame(self, frame):
-        """Process a single frame"""
-        # Get simulated GPS coordinates
+        """Process single frame - OPTIMIZED"""
+        # Get GPS
         lat, lon, alt = self.gps_points[self.gps_index % len(self.gps_points)]
         self.gps_index += 1
-        
-        # Run YOLO inference
-        start_time = cv2.getTickCount()
-        results = self.model.predict(frame, conf=CONFIDENCE_THRESHOLD, verbose=False)[0]
-        end_time = cv2.getTickCount()
-        
+
+        # Preprocess: fix color + enhance for corrosion detection
+        frame = self._preprocess_frame(frame)
+
+        # YOLO inference
+        start = cv2.getTickCount()
+        results = self.model.predict(
+            frame,
+            conf=CONFIDENCE_THRESHOLD,
+            verbose=False,
+            device=self.device
+        )[0]
+        end = cv2.getTickCount()
+
         # Calculate FPS
-        inference_time = (end_time - start_time) / cv2.getTickFrequency()
-        fps = 1 / inference_time if inference_time > 0 else 0
-        self.fps_list.append(fps)
-        
+        fps = cv2.getTickFrequency() / (end - start)
+        self.fps_history.append(fps)
+        if len(self.fps_history) > 30:  # Keep last 30 frames
+            self.fps_history.pop(0)
+
         # Process detections
         for box in results.boxes:
-            cls_id = int(box.cls[0])
-            conf = float(box.conf[0])
-            bbox = box.xyxy[0].cpu().numpy().tolist()
-            class_name = results.names[cls_id]
-            
-            # Add GPS-tagged detection
             self.gps_handler.add_detection(
-                image_name=f"webcam_frame_{self.frame_count:06d}.jpg",
-                class_name=class_name,
-                confidence=conf,
-                bbox=bbox,
+                image_name=f"frame_{self.frame_count:06d}.jpg",
+                class_name=results.names[int(box.cls[0])],
+                confidence=float(box.conf[0]),
+                bbox=box.xyxy[0].cpu().numpy().tolist(),
                 latitude=lat,
                 longitude=lon,
                 altitude=alt
             )
-            
             self.detection_count += 1
-        
-        # Draw detections on frame
-        annotated_frame = results.plot()
-        
-        # Add overlay information
-        self._draw_overlay(annotated_frame, lat, lon, alt, fps, len(results.boxes))
-        
+
+        # Draw annotations
+        annotated = results.plot()
+        self._draw_overlay(annotated, lat, lon, alt, fps, len(results.boxes))
+
         self.frame_count += 1
-        return annotated_frame
-    
-    def _draw_overlay(self, frame, lat, lon, alt, fps, num_detections):
-        """Draw information overlay on frame"""
+        return annotated
+
+    def _draw_overlay(self, frame, lat, lon, alt, fps, num_dets):
+        """Draw optimized info overlay"""
         h, w = frame.shape[:2]
-        
+
         # Semi-transparent background
         overlay = frame.copy()
-        cv2.rectangle(overlay, (0, 0), (w, 150), (0, 0, 0), -1)
+        cv2.rectangle(overlay, (0, 0), (w, 140), (0, 0, 0), -1)
         cv2.addWeighted(overlay, 0.4, frame, 0.6, 0, frame)
-        
-        # Title
-        cv2.putText(frame, "🚁 PIPELINE INSPECTION - LAPTOP TESTING", 
-                   (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
-        
-        # GPS coordinates (if enabled)
+
+        # Info text
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        cv2.putText(frame, "PIPELINE INSPECTION - TESTING MODE",
+                   (10, 30), font, 0.7, (0, 255, 255), 2)
+
         if SHOW_GPS:
-            cv2.putText(frame, f"GPS: {lat:.6f}, {lon:.6f} | Alt: {alt:.1f}m", 
-                       (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-        
-        # Statistics
-        stats_text = []
+            cv2.putText(frame, f"GPS: {lat:.6f}, {lon:.6f} | Alt: {alt:.1f}m",
+                       (10, 60), font, 0.5, (0, 255, 0), 2)
+
+        stats = []
         if SHOW_FPS:
-            stats_text.append(f"FPS: {fps:.1f}")
+            avg_fps = np.mean(self.fps_history) if self.fps_history else 0
+            stats.append(f"FPS: {avg_fps:.1f}")
         if SHOW_DETECTION_COUNT:
-            stats_text.append(f"Detections: {self.detection_count}")
-        stats_text.append(f"Frame: {self.frame_count}")
-        
-        cv2.putText(frame, " | ".join(stats_text), 
-                   (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
-        
-        # Mode indicator
-        cv2.putText(frame, "MODE: SIMULATED GPS", 
-                   (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 2)
-        
+            stats.append(f"Detections: {self.detection_count}")
+        stats.append(f"Frame: {self.frame_count}")
+
+        cv2.putText(frame, " | ".join(stats),
+                   (10, 90), font, 0.5, (255, 255, 255), 2)
+
+        cv2.putText(frame, "MODE: SIMULATED GPS",
+                   (10, 120), font, 0.5, (255, 255, 0), 2)
+
         # Detection indicator
-        if num_detections > 0:
+        if num_dets > 0:
             cv2.circle(frame, (w - 30, 30), 15, (0, 0, 255), -1)
-            cv2.putText(frame, str(num_detections), (w - 38, 37), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
-    
+            cv2.putText(frame, str(num_dets), (w - 38, 37),
+                       font, 0.6, (255, 255, 255), 2)
+
     def run(self):
-        """Run the webcam inspection"""
+        """Main execution loop - OPTIMIZED"""
         print("="*70)
         print("🎥 STARTING WEBCAM TESTING")
         print("="*70)
-        print("Settings from config.py:")
-        print(f"  Output Directory: {OUTPUT_DIRECTORY}")
-        print(f"  Auto-save interval: {AUTO_SAVE_INTERVAL}")
-        print(f"  Frame skip: {FRAME_SKIP}")
+        print(f"Output: {OUTPUT_DIRECTORY}")
+        print(f"Auto-save: Every {AUTO_SAVE_INTERVAL} detections" if AUTO_SAVE_INTERVAL > 0 else "Auto-save: Disabled")
         print("\nControls:")
-        print("  [Q] - Quit and save results")
-        print("  [S] - Save results now")
-        print("  [P] - Print statistics")
-        print("  [R] - Reset detection counter")
-        print("  [SPACE] - Pause/Resume")
+        print("  [Q] Quit  [S] Save  [P] Stats  [R] Reset  [SPACE] Pause")
         print("="*70 + "\n")
-        
-        # Create output directory
+
         os.makedirs(OUTPUT_DIRECTORY, exist_ok=True)
-        
-        # Open webcam
-        cap = cv2.VideoCapture(CAMERA_INDEX)
-        
+
+        # Open webcam — force color mode at backend level
+        cap = cv2.VideoCapture(CAMERA_INDEX, cv2.CAP_DSHOW)  # CAP_DSHOW forces Windows color driver
         if not cap.isOpened():
-            print(f"❌ Error: Could not open webcam {CAMERA_INDEX}")
-            print(f"Try changing CAMERA_INDEX in config.py")
+            # Fallback to default backend
+            cap = cv2.VideoCapture(CAMERA_INDEX)
+        if not cap.isOpened():
+            print(f"❌ Failed to open camera {CAMERA_INDEX}")
             return
-        
-        # Set webcam properties
+
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, WEBCAM_WIDTH)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, WEBCAM_HEIGHT)
-        
-        print("✅ Webcam opened successfully")
-        print("🚀 Inspection started! Press 'Q' to quit.\n")
-        
+        cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))  # Force MJPG = color
+        cap.set(cv2.CAP_PROP_CONVERT_RGB, 1)
+
+        print("✅ Webcam ready\n")
+
         paused = False
-        last_save_count = 0
+        last_save = 0
         frame_counter = 0
-        
+        annotated_frame = None
+
         try:
             while True:
                 if not paused:
                     ret, frame = cap.read()
                     if not ret:
-                        print("⚠️ Failed to grab frame")
+                        print("⚠️ Frame read failed")
                         break
-                    
-                    # Frame skipping for performance
+
+                    # Frame skipping
                     frame_counter += 1
                     if frame_counter % FRAME_SKIP != 0:
                         continue
-                    
-                    # Process frame
+
+                    # Process
                     annotated_frame = self.process_frame(frame)
-                    
-                    # Auto-save periodically
-                    if AUTO_SAVE_INTERVAL > 0 and \
-                       self.detection_count > 0 and \
-                       self.detection_count >= last_save_count + AUTO_SAVE_INTERVAL:
-                        self._save_results(auto=True)
-                        last_save_count = self.detection_count
+
+                    # Auto-save
+                    if AUTO_SAVE_INTERVAL > 0 and self.detection_count > 0:
+                        if self.detection_count >= last_save + AUTO_SAVE_INTERVAL:
+                            self._save_results(auto=True)
+                            last_save = self.detection_count
                 else:
-                    # Show paused frame
-                    cv2.putText(annotated_frame, "⏸ PAUSED", 
-                               (annotated_frame.shape[1]//2 - 100, annotated_frame.shape[0]//2),
-                               cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 255), 3)
-                
-                # Display frame
-                cv2.imshow('Pipeline Inspection - Webcam Testing', annotated_frame)
-                
-                # Handle keyboard input
+                    if annotated_frame is not None:
+                        cv2.putText(annotated_frame, "PAUSED",
+                                   (annotated_frame.shape[1]//2 - 80, annotated_frame.shape[0]//2),
+                                   cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 255), 3)
+
+                if annotated_frame is not None:
+                    cv2.imshow('Pipeline Inspection', annotated_frame)
+
+                # Keyboard controls
                 key = cv2.waitKey(1) & 0xFF
-                
                 if key == ord('q'):
-                    print("\n🛑 Quit requested...")
                     break
                 elif key == ord('s'):
-                    print("\n💾 Manual save requested...")
-                    self._save_results(auto=False)
+                    self._save_results()
                 elif key == ord('p'):
-                    print("\n" + "="*70)
                     self.gps_handler.print_summary_report()
-                    print("="*70 + "\n")
                 elif key == ord('r'):
-                    print("\n🔄 Resetting detection counter...")
                     self.detection_count = 0
                     self.gps_handler = GPSTaggedDetection()
+                    print("🔄 Reset")
                 elif key == ord(' '):
                     paused = not paused
-                    print(f"\n{'⏸ PAUSED' if paused else '▶️ RESUMED'}")
-        
+
         except KeyboardInterrupt:
-            print("\n\n⚠️ Interrupted by user (Ctrl+C)")
-        
+            print("\n⚠️ Interrupted")
+
         finally:
-            # Cleanup
-            print("\n🧹 Cleaning up...")
             cap.release()
             cv2.destroyAllWindows()
-            
-            # Final save
-            print("\n💾 Saving final results...")
             self._save_results(final=True)
-            
-            # Print final statistics
-            self._print_final_stats()
-    
+            self._print_stats()
+
     def _save_results(self, auto=False, final=False):
-        """Save detection results based on config settings"""
+        """Save with configured formats"""
         prefix = "final_" if final else ""
-        
+
         try:
             if EXPORT_JSON:
                 self.gps_handler.save_to_json(f'{OUTPUT_DIRECTORY}/{prefix}detections.json')
@@ -290,61 +311,42 @@ class WebcamPipelineInspector:
             if EXPORT_GEOJSON:
                 self.gps_handler.save_to_geojson(f'{OUTPUT_DIRECTORY}/{prefix}detections.geojson')
             if EXPORT_HTML_MAP:
-                self.gps_handler.create_interactive_map(f'{OUTPUT_DIRECTORY}/{prefix}detection_map.html')
-            
-            if auto:
-                print(f"💾 Auto-saved: {self.detection_count} detections")
-            elif final:
-                print(f"✅ Final save complete: {self.detection_count} detections")
-            else:
-                print(f"💾 Manual save complete: {self.detection_count} detections")
+                self.gps_handler.create_interactive_map(f'{OUTPUT_DIRECTORY}/{prefix}map.html')
+
+            status = "Auto-saved" if auto else "Saved"
+            print(f"💾 {status}: {self.detection_count} detections")
         except Exception as e:
-            print(f"⚠️ Error saving results: {e}")
-    
-    def _print_final_stats(self):
+            print(f"⚠️ Save error: {e}")
+
+    def _print_stats(self):
         """Print final statistics"""
         print("\n" + "="*70)
-        print("📊 FINAL STATISTICS")
+        print("📊 SESSION STATISTICS")
         print("="*70)
-        print(f"Total frames processed: {self.frame_count}")
-        print(f"Total detections: {self.detection_count}")
-        if self.fps_list:
-            print(f"Average FPS: {np.mean(self.fps_list):.1f}")
+        print(f"Frames: {self.frame_count}")
+        print(f"Detections: {self.detection_count}")
+        if self.fps_history:
+            print(f"Avg FPS: {np.mean(self.fps_history):.1f}")
         print("="*70 + "\n")
-        
+
         self.gps_handler.print_summary_report()
-        
-        print("\n✅ Testing complete!")
-        print(f"📁 Results saved to: {os.path.abspath(OUTPUT_DIRECTORY)}/")
+        print(f"\n📁 Results: {os.path.abspath(OUTPUT_DIRECTORY)}/")
 
 
 def main():
-    """Main function"""
-    
+    """Entry point"""
     print("""
     ╔════════════════════════════════════════════════════════════════╗
     ║                                                                ║
-    ║     🚁 PIPELINE INSPECTION - WEBCAM TESTING SYSTEM 🚁          ║
-    ║                                                                ║
-    ║     All settings can be changed in config.py                   ║
+    ║        🚁 DRONE PIPELINE INSPECTION - TESTING SYSTEM           ║
+    ║              YOLOv11n + GPS Localization                       ║
     ║                                                                ║
     ╚════════════════════════════════════════════════════════════════╝
     """)
-    
-    # Check if model exists
-    if not os.path.exists(MODEL_PATH):
-        print(f"❌ Error: Model not found at {MODEL_PATH}")
-        print("\nPlease:")
-        print("1. Download best.pt from Google Colab after training")
-        print(f"2. Place it at: {MODEL_PATH}")
-        print("3. Or update MODEL_PATH in config.py")
-        return
-    
+
     try:
-        # Create and run inspector
-        inspector = WebcamPipelineInspector()
+        inspector = WebcamInspector()
         inspector.run()
-        
     except Exception as e:
         print(f"\n❌ Error: {e}")
         import traceback

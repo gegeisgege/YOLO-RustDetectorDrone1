@@ -1,9 +1,9 @@
 {
   "metadata": {
-    "total_detections": 147,
+    "total_detections": 141,
     "flight_start": "2026-04-01T22:04:37.732715",
-    "flight_end": "2026-04-01T22:07:39.861656",
-    "generated_at": "2026-04-01T22:56:49.753788"
+    "flight_end": "2026-04-01T22:07:38.420121",
+    "generated_at": "2026-04-01T22:07:38.427122"
   },
   "detections": [
     {
@@ -2543,137 +2543,29 @@
         "altitude": 44.694238827050896
       },
       "severity": "CRITICAL"
-    },
-    {
-      "timestamp": "2026-04-01T22:07:38.884019",
-      "image": "frame_000930.jpg",
-      "class": "severe-corrosion",
-      "confidence": 0.26925814151763916,
-      "bbox": [
-        566.8299560546875,
-        337.71270751953125,
-        762.3448486328125,
-        676.6359252929688
-      ],
-      "gps": {
-        "latitude": -7.253886188231845,
-        "longitude": 112.75619189044328,
-        "altitude": 45.77581531363903
-      },
-      "severity": "CRITICAL"
-    },
-    {
-      "timestamp": "2026-04-01T22:07:39.061748",
-      "image": "frame_000931.jpg",
-      "class": "severe-corrosion",
-      "confidence": 0.2533721327781677,
-      "bbox": [
-        554.67822265625,
-        369.21441650390625,
-        750.5526123046875,
-        685.3075561523438
-      ],
-      "gps": {
-        "latitude": -7.253873989723079,
-        "longitude": 112.75643152430837,
-        "altitude": 50.14868719155455
-      },
-      "severity": "CRITICAL"
-    },
-    {
-      "timestamp": "2026-04-01T22:07:39.297650",
-      "image": "frame_000932.jpg",
-      "class": "severe-corrosion",
-      "confidence": 0.32763808965682983,
-      "bbox": [
-        552.261474609375,
-        364.7081298828125,
-        751.51708984375,
-        684.0240478515625
-      ],
-      "gps": {
-        "latitude": -7.253861768803144,
-        "longitude": 112.75634647683884,
-        "altitude": 54.96213818958251
-      },
-      "severity": "CRITICAL"
-    },
-    {
-      "timestamp": "2026-04-01T22:07:39.488175",
-      "image": "frame_000933.jpg",
-      "class": "severe-corrosion",
-      "confidence": 0.2919519543647766,
-      "bbox": [
-        539.0283203125,
-        353.6658935546875,
-        744.9903564453125,
-        683.0323486328125
-      ],
-      "gps": {
-        "latitude": -7.253849525776671,
-        "longitude": 112.75615858927218,
-        "altitude": 47.73681338587024
-      },
-      "severity": "CRITICAL"
-    },
-    {
-      "timestamp": "2026-04-01T22:07:39.677183",
-      "image": "frame_000934.jpg",
-      "class": "severe-corrosion",
-      "confidence": 0.2537149488925934,
-      "bbox": [
-        498.43328857421875,
-        337.3295593261719,
-        722.7542114257812,
-        691.5751953125
-      ],
-      "gps": {
-        "latitude": -7.253837260949163,
-        "longitude": 112.7564820426737,
-        "altitude": 44.12175979951528
-      },
-      "severity": "CRITICAL"
-    },
-    {
-      "timestamp": "2026-04-01T22:07:39.861656",
-      "image": "frame_000935.jpg",
-      "class": "severe-corrosion",
-      "confidence": 0.26890993118286133,
-      "bbox": [
-        501.7824401855469,
-        342.1217956542969,
-        717.61962890625,
-        697.201416015625
-      ],
-      "gps": {
-        "latitude": -7.253824974626984,
-        "longitude": 112.75630983398136,
-        "altitude": 47.64221613573787
-      },
-      "severity": "CRITICAL"
     }
   ],
   "statistics": {
-    "total_detections": 147,
+    "total_detections": 141,
     "classes": {
-      "severe-corrosion": 144,
+      "severe-corrosion": 138,
       "corroded-part": 3
     },
     "severity_counts": {
-      "CRITICAL": 144,
+      "CRITICAL": 138,
       "HIGH": 0,
       "MEDIUM": 0,
       "LOW": 3
     },
     "confidence_stats": {
-      "mean": 0.28783926367759705,
+      "mean": 0.2882803302284674,
       "min": 0.2502620816230774,
       "max": 0.42708250880241394,
-      "std": 0.03460431235527076
+      "std": 0.034859603839965524
     },
-    "distance_traveled_km": 3.846676002239423,
-    "coverage_area_km2": 0.20115175173129984,
-    "flight_duration": "0:03:02.128941",
-    "detection_density": 38.21481193488115
+    "distance_traveled_km": 3.7060990911196083,
+    "coverage_area_km2": 0.19671226473887882,
+    "flight_duration": "0:03:00.687406",
+    "detection_density": 38.04539396635616
   }
 }
