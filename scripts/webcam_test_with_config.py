@@ -2,7 +2,7 @@
 """
 OPTIMIZED WEBCAM TESTING SCRIPT
 Project: Drone Pipeline Visual Inspection with YOLOv11n
-Author: Kris
+Author: gege (Gerald Pillian)
 """
 
 import cv2
