@@ -1,0 +1,21 @@
+names:
+- Rust
+- car
+- copper corrosion
+- corroded-part
+- corrosion
+- iron rust
+- mild-corrosion
+- moderate-corrosion
+- rust
+- severe-corrosion
+nc: 10
+roboflow:
+  license: CC BY 4.0
+  project: rust-detection-38s6e
+  url: https://universe.roboflow.com/rust-detection/rust-detection-38s6e/dataset/1
+  version: 1
+  workspace: rust-detection
+test: C:\Users\geral\OneDrive\Desktop\Thesis\TA Kris\training\Rust-Detection-1\test/images
+train: C:\Users\geral\OneDrive\Desktop\Thesis\TA Kris\training\Rust-Detection-1\train/images
+val: C:\Users\geral\OneDrive\Desktop\Thesis\TA Kris\training\Rust-Detection-1\valid/images
